@@ -1,7 +1,6 @@
 package com.example.fuelcardagent.service;
 
 import com.example.fuelcardagent.domain.CardType;
-import com.example.fuelcardagent.domain.Customer;
 import com.example.fuelcardagent.dto.CustomerDTO;
 import com.example.fuelcardagent.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
