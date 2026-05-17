@@ -1,0 +1,114 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Visão geral do sistema de cartões de crédito</p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  } @else {
+    <div class="stats-grid">
+      <div class="stat-card card-elevated" (click)="goToCustomers()">
+        <div class="stat-icon customers-icon">
+          <mat-icon>people</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalCustomers() }}</span>
+          <span class="stat-label">Clientes Cadastrados</span>
+        </div>
+      </div>
+
+      <div class="stat-card card-elevated" (click)="goToCards()">
+        <div class="stat-icon cards-icon">
+          <mat-icon>credit_card</mat-icon>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalCards() }}</span>
+          <span class="stat-label">Total de Cartões</span>
+        </div>
+      </div>
+
+      @if (stats()) {
+        <div class="stat-card card-elevated" (click)="goToCards()">
+          <div class="stat-icon gas-icon">
+            <mat-icon>local_gas_station</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats()!.totalGasStationCards }}</span>
+            <span class="stat-label">Cartões Posto</span>
+          </div>
+        </div>
+
+        <div class="stat-card card-elevated">
+          <div class="stat-icon limit-icon">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{
+              stats()!.averageCreditLimit | currency: 'BRL' : 'symbol' : '1.2-2'
+            }}</span>
+            <span class="stat-label">Limite Médio (Posto)</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="content-grid">
+      <div class="section card-elevated">
+        <div class="section-header">
+          <h2>Últimos Clientes</h2>
+          <button mat-button color="primary" (click)="goToCustomers()">
+            Ver Todos
+          </button>
+        </div>
+        <div class="customer-list">
+          @for (customer of recentCustomers(); track customer.id) {
+            <div class="customer-item">
+              <div class="customer-avatar">
+                {{ customer.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="customer-info">
+                <span class="customer-name">{{ customer.name }}</span>
+                <span class="customer-email">{{ customer.email }}</span>
+              </div>
+            </div>
+          }
+          @if (recentCustomers().length === 0) {
+            <p class="no-data">Nenhum cliente cadastrado</p>
+          }
+        </div>
+      </div>
+
+      <div class="section card-elevated quick-actions">
+        <div class="section-header">
+          <h2>Ações Rápidas</h2>
+        </div>
+        <div class="actions-list">
+          <button class="action-btn" (click)="goToChat()">
+            <mat-icon>smart_toy</mat-icon>
+            <span>Conversar com IA</span>
+          </button>
+          <button class="action-btn" (click)="goToCustomers()">
+            <mat-icon>person_add</mat-icon>
+            <span>Gerenciar Clientes</span>
+          </button>
+          <button class="action-btn" (click)="goToCards()">
+            <mat-icon>add_card</mat-icon>
+            <span>Gerenciar Cartões</span>
+          </button>
+        </div>
+
+        @if (stats()) {
+          <div class="total-limit">
+            <span class="total-label">Limite Total (Postos)</span>
+            <span class="total-value">{{
+              stats()!.totalCreditLimit | currency: 'BRL' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

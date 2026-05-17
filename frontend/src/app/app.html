@@ -1,0 +1,43 @@
+<mat-sidenav-container class="app-container">
+  <mat-sidenav
+    [opened]="sidenavOpened"
+    mode="side"
+    class="app-sidenav"
+  >
+    <div class="sidenav-header">
+      <mat-icon class="logo-icon">local_gas_station</mat-icon>
+      <span class="logo-text">Fuel Card</span>
+    </div>
+
+    <mat-nav-list>
+      @for (item of navItems; track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active-link"
+          class="nav-item"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <small>Fuel Card Agent v1.0</small>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="app-content">
+    <mat-toolbar class="app-toolbar">
+      <button mat-icon-button (click)="sidenavOpened = !sidenavOpened">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="toolbar-title">Fuel Card Agent</span>
+    </mat-toolbar>
+
+    <main class="main-content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -39,6 +39,10 @@ public class Customer {
     @Builder.Default
     private List<CreditCard> cards = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_status", nullable = false, length = 30)
+    private CustomerStatus customerStatus;
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) {

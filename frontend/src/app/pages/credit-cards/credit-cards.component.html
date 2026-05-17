@@ -1,0 +1,118 @@
+<div class="cards-page">
+  <div class="page-header">
+    <div>
+      <h1>Cartões de Crédito</h1>
+      <p>Gerencie os cartões cadastrados no sistema</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()" id="btn-new-card">
+      <mat-icon>add_card</mat-icon>
+      Novo Cartão
+    </button>
+  </div>
+
+  @if (stats()) {
+    <div class="stats-row">
+      <div class="mini-stat card-elevated">
+        <mat-icon class="stat-icon-gas">local_gas_station</mat-icon>
+        <div>
+          <span class="mini-stat-value">{{ stats()!.totalGasStationCards }}</span>
+          <span class="mini-stat-label">Cartões Posto</span>
+        </div>
+      </div>
+      <div class="mini-stat card-elevated">
+        <mat-icon class="stat-icon-avg">trending_up</mat-icon>
+        <div>
+          <span class="mini-stat-value">{{ stats()!.averageCreditLimit | currency: 'BRL':'symbol':'1.2-2' }}</span>
+          <span class="mini-stat-label">Limite Médio</span>
+        </div>
+      </div>
+      <div class="mini-stat card-elevated">
+        <mat-icon class="stat-icon-total">account_balance_wallet</mat-icon>
+        <div>
+          <span class="mini-stat-value">{{ stats()!.totalCreditLimit | currency: 'BRL':'symbol':'1.2-2' }}</span>
+          <span class="mini-stat-label">Limite Total</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="filter-bar card-elevated">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Filtrar por tipo</mat-label>
+      <mat-select [(ngModel)]="filterType" (selectionChange)="onFilterChange()" id="filter-card-type">
+        <mat-option value="ALL">Todos</mat-option>
+        <mat-option value="GAS_STATION">Posto de Gasolina</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  } @else {
+    <div class="table-container card-elevated">
+      @if (cards().length === 0) {
+        <div class="empty-state">
+          <mat-icon>credit_card_off</mat-icon>
+          <p>Nenhum cartão encontrado</p>
+        </div>
+      } @else {
+        <table mat-table [dataSource]="cards()" class="cards-table">
+          <ng-container matColumnDef="cardNumber">
+            <th mat-header-cell *matHeaderCellDef>Número</th>
+            <td mat-cell *matCellDef="let card">
+              <span class="card-number-cell">{{ card.cardNumber }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="cardHolder">
+            <th mat-header-cell *matHeaderCellDef>Titular</th>
+            <td mat-cell *matCellDef="let card">{{ card.cardHolder }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="customerName">
+            <th mat-header-cell *matHeaderCellDef>Cliente</th>
+            <td mat-cell *matCellDef="let card">{{ card.customerName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cardType">
+            <th mat-header-cell *matHeaderCellDef>Tipo</th>
+            <td mat-cell *matCellDef="let card">
+              <span class="card-type-badge" [class]="getCardTypeClass(card.cardType)">
+                {{ getCardTypeLabel(card.cardType) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="creditLimit">
+            <th mat-header-cell *matHeaderCellDef>Limite</th>
+            <td mat-cell *matCellDef="let card" class="limit-cell">
+              {{ card.creditLimit | currency: 'BRL':'symbol':'1.2-2' }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expirationDate">
+            <th mat-header-cell *matHeaderCellDef>Vencimento</th>
+            <td mat-cell *matCellDef="let card">{{ card.expirationDate }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Ações</th>
+            <td mat-cell *matCellDef="let card">
+              <button mat-icon-button matTooltip="Editar" (click)="openEditDialog(card)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Excluir" (click)="deleteCard(card)" class="delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      }
+    </div>
+  }
+</div>

@@ -16,4 +16,10 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @Query("SELECT DISTINCT c FROM Customer c JOIN c.cards card WHERE card.cardType = :cardType")
     List<Customer> findByCardType(@Param("cardType") CardType cardType);
+
+    @Query("SELECT c FROM Customer c WHERE c.name LIKE :name AND c.customerStatus = :status ORDER BY c.id DESC LIMIT :maxResults")
+    List<Customer> findByNameAndStatus(String nome, String customerStatus, int maxResults);
+
+    @Query("SELECT c FROM Customer c ORDER BY c.id DESC LIMIT :maxResults")
+    List<Customer> findTopN(int maxResults);
 }

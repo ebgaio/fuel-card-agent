@@ -1,5 +1,7 @@
 package com.example.fuelcardagent.agent;
 
+import com.example.fuelcardagent.repository.CustomerRepository;
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +29,34 @@ import java.util.Map;
 public class DatabaseQueryTool {
 
     private final WebClient webClient;
+    private final CustomerRepository customerrepository;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Ferramentas relacionadas a CLIENTES
     // ─────────────────────────────────────────────────────────────────────────
+
+    @Tool("Busca clientes no sistema. Você DEVE solicitar o nome ou parte dele para filtrar. " +
+            "Se o usuário não fornecer um nome, informe que a lista é muito grande e peça um termo de busca.")
+    public String buscarClientes(
+            @P("O nome ou parte do nome do cliente para busca (opcional)") String nome,
+            @P("O status do cliente: ATIVO, INATIVO, SUSPENCO ou DELETADO") String status,
+            @P("Limite de resultados para exibição (padrão 10)") Integer limite,
+            @P("Limite de resultados para exibição (padrão 10)") Long customerId
+    ) {
+        int maxResults = (limite == null || limite > 50) ? 10 : limite;
+
+        if (nome == null || nome.isBlank()) {
+             throw new RuntimeException("É necessário um nome para filtrar a busca.");
+        }
+
+        log.info("[TOOL] getCustomerCreditCards({}) → GET /api/credit-cards/customer/{}", customerId, customerId);
+        List<?> result = webClient.get()
+                .uri("/api/credit-cards/customer/{customerId}", customerId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .block();
+        return formatResult("Cartões do cliente ID " + customerId, result);
+    }
 
     @Tool("Lista todos os clientes cadastrados no sistema com seus dados completos (id, nome, email, telefone, CPF, data de cadastro)")
     public String getAllCustomers() {

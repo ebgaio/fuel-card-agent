@@ -5,6 +5,7 @@ import com.example.fuelcardagent.dto.CustomerDTO;
 import com.example.fuelcardagent.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,5 +59,29 @@ public class CustomerController {
     public ResponseEntity<List<CustomerDTO>> findByCardType(@RequestParam CardType type) {
         log.info("[API] GET /api/customers/by-card-type?type={}", type);
         return ResponseEntity.ok(customerService.findByCardType(type));
+    }
+
+    @PostMapping
+    public ResponseEntity<CustomerDTO> create(@RequestBody CustomerDTO customerDTO) {
+        log.info("[API] POST /api/customers");
+        CustomerDTO created = customerService.create(customerDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerDTO> update(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
+        log.info("[API] PUT /api/customers/{}", id);
+        return customerService.update(id, customerDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("[API] DELETE /api/customers/{}", id);
+        if (customerService.delete(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

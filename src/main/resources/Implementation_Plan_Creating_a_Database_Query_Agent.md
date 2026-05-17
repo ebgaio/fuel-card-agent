@@ -203,7 +203,7 @@ curl -X POST http://localhost:8080/api/agent/chat \
   
 curl -X POST http://localhost:8080/api/agent/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Apresente os clientes com limites na faixa entre 13,6% a mais a menos do valor 2570,00"}'
+  -d '{"message": "Apresente os clientes com limites na faixa entre 13,6% a mais e a menos do valor 2570,00"}'
 ```
 
 ### 6. Validar que o LLM não acessa o banco diretamente

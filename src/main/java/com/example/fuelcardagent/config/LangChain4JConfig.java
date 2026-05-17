@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.Objects;
 
 @Configuration
 public class LangChain4JConfig {
@@ -36,7 +37,7 @@ public class LangChain4JConfig {
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
-                .baseUrl(apiBaseUrl)
+                .baseUrl(Objects.requireNonNull(apiBaseUrl, "app.api.base-url must be configured"))
                 .defaultHeader("Content-Type", "application/json")
                 .defaultHeader("Accept", "application/json")
                 .codecs(configurer -> configurer

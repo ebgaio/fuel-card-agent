@@ -2,9 +2,11 @@ package com.example.fuelcardagent.controller;
 
 import com.example.fuelcardagent.dto.CardStatsDTO;
 import com.example.fuelcardagent.dto.CreditCardDTO;
+import com.example.fuelcardagent.dto.CreditCardLimitDTO;
 import com.example.fuelcardagent.service.CreditCardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,14 @@ public class CreditCardController {
     public ResponseEntity<List<CreditCardDTO>> findAll() {
         log.info("[API] GET /api/credit-cards");
         return ResponseEntity.ok(creditCardService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CreditCardDTO> findById(@PathVariable Long id) {
+        log.info("[API] GET /api/credit-cards/{}", id);
+        return creditCardService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -65,10 +75,33 @@ public class CreditCardController {
      * Exemplo: referenceValue=4375.00 e percentage=20 → faixa [3500.00, 5250.00]
      */
     @GetMapping("/by-limit-range")
-    public ResponseEntity<List<CreditCardDTO>> findByLimitRange(
+    public ResponseEntity<List<CreditCardLimitDTO>> findByLimitRange(
             @RequestParam BigDecimal referenceValue,
             @RequestParam BigDecimal percentage) {
         log.info("[API] GET /api/credit-cards/by-limit-range?referenceValue={}&percentage={}", referenceValue, percentage);
         return ResponseEntity.ok(creditCardService.findByLimitRange(referenceValue, percentage));
+    }
+
+    @PostMapping
+    public ResponseEntity<CreditCardDTO> create(@RequestBody CreditCardDTO creditCardDTO) {
+        log.info("[API] POST /api/credit-cards");
+        CreditCardDTO created = creditCardService.create(creditCardDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CreditCardDTO> update(@PathVariable Long id, @RequestBody CreditCardDTO creditCardDTO) {
+        log.info("[API] PUT /api/credit-cards/{}", id);
+        CreditCardDTO updated = creditCardService.update(id, creditCardDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("[API] DELETE /api/credit-cards/{}", id);
+        if (creditCardService.delete(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

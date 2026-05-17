@@ -1,0 +1,165 @@
+.cards-page {
+  max-width: 1200px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1e1e2d;
+  }
+  p {
+    color: #8888a0;
+    font-size: 14px;
+  }
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+
+  .stat-icon-gas {
+    color: #ffa726;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+  .stat-icon-avg {
+    color: #66bb6a;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+  .stat-icon-total {
+    color: #ab47bc;
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .mini-stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e1e2d;
+  }
+
+  .mini-stat-label {
+    display: block;
+    font-size: 12px;
+    color: #8888a0;
+  }
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+
+  .filter-field {
+    width: 250px;
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+  }
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.table-container {
+  overflow: hidden;
+}
+
+.cards-table {
+  width: 100%;
+
+  th {
+    font-weight: 600;
+    color: #44445a;
+    font-size: 13px;
+  }
+
+  td {
+    font-size: 14px;
+    color: #2d2d3f;
+  }
+
+  tr.mat-mdc-row {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(79, 140, 255, 0.04);
+    }
+  }
+}
+
+.card-number-cell {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 13px;
+  color: #44445a;
+}
+
+.card-type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.type-gas {
+    background: rgba(255, 167, 38, 0.12);
+    color: #e65100;
+  }
+  &.type-credit {
+    background: rgba(79, 140, 255, 0.12);
+    color: #1565c0;
+  }
+  &.type-debit {
+    background: rgba(102, 187, 106, 0.12);
+    color: #2e7d32;
+  }
+}
+
+.limit-cell {
+  font-weight: 600;
+  color: #1e1e2d !important;
+}
+
+.delete-btn mat-icon {
+  color: #ef5350;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  color: #8888a0;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+  }
+}
