@@ -8,32 +8,45 @@ Sistema com **Spring Boot + MySQL + LangChain4J + Ollama (LLama)** onde um agent
 
 ```
 fuel-card-agent/
-├── pom.xml
-├── src/main/java/com/example/fuelcardagent/
-│   ├── domain/
-│   │   ├── Customer.java                  (entidade)
-│   │   ├── CreditCard.java                (entidade)
-│   │   └── CardType.java                  (enum: GAS_STATION, CREDIT, DEBIT...)
-│   ├── repository/
-│   │   ├── CustomerRepository.java
-│   │   └── CreditCardRepository.java
-│   ├── service/
-│   │   ├── CustomerService.java
-│   │   └── CreditCardService.java
-│   ├── controller/
-│   │   ├── CustomerController.java        (API de dados)
-│   │   ├── CreditCardController.java      (API de dados)
-│   │   └── AgentController.java           (endpoint do chat)
-│   ├── agent/
-│   │   ├── DatabaseQueryTool.java         (ferramenta do agente → chama APIs REST)
-│   │   ├── FuelCardAgent.java             (interface AiServices)
-│   │   └── AgentService.java              (orquestração do agente)
-│   └── config/
-│       └── LangChain4JConfig.java         (configuração Ollama + AiServices)
-├── src/main/resources/
-│   ├── application.properties
-│   └── db/migration/V1__init.sql          (Flyway ou init manual)
-└── docker-compose.yml                     (MySQL + Ollama)
+├── pom.xml                             ← Spring Boot 3.5.12 + LangChain4J 1.12.2 + WebFlux + Flyway
+├── docker-compose.yml                  ← MySQL 8 + Ollama (LLama)
+└── src/main/
+    ├── resources/
+    │   ├── application.properties      ← Configurações MySQL, Ollama, WebClient
+    │   └── db/migration/V1__init.sql   ← 13 clientes + cartões GAS_STATION + dados extras
+    └── java/com/example/fuelcardagent/
+        ├── FuelCardAgentApplication.java
+        ├── domain/
+        │   ├── mapper/
+        │   │   └── CreditCardMapper.java ← Mapeamento entre entidades e DTOs
+        │   ├── CardType.java           ← Enum: GAS_STATION | STANDARD_CREDIT | DEBIT
+        │   ├── Customer.java           ← Entidade JPA
+        │   ├── CreditCard.java         ← Entidade JPA (ManyToOne → Customer)
+        │   └── CustomerStatus.java     ← Enum: ACTIVE | INACTIVE | SUSPENDED | DELETED
+        ├── repository/
+        │   ├── CustomerRepository.java ← Busca por nome, filtro por tipo de cartão
+        │   └── CreditCardRepository.java ← Filtro por tipo, por cliente, estatísticas
+        ├── dto/
+        │   ├── CustomerDTO.java
+        │   ├── CreditCardDTO.java
+        │   ├── CardStatsDTO.java       ← Record com total, média e soma de limites
+        │   └── CreditCardLimitDTO.java ← DTO para limites de cartão
+        ├── service/
+        │   ├── CustomerService.java
+        │   ├── CreditCardService.java
+        │   └── AgentService.java       ← Orquestra chamadas ao agente
+        ├── controller/
+        │   ├── CustomerController.java  ← 4 endpoints de dados
+        │   ├── CreditCardController.java ← 4 endpoints de dados
+        │   └── AgentController.java     ← POST /api/agent/chat
+        ├── agent/
+        │   ├── DatabaseQueryTool.java  ← @Tool methods via WebClient (sem acesso direto ao BD)
+        │   └── FuelCardAgent.java      ← Interface AiServices (@SystemMessage em PT-BR)
+        └── config/
+            ├── modelMapper/
+            │   └── ModelMapperConfig.java ← Configuração do ModelMapper
+            ├── WebConfig.java          ← Configuração CORS
+            └── LangChain4JConfig.java  ← Bean WebClient + OllamaChatModel + AiServices
 ```
 
 ---
@@ -51,6 +64,9 @@ Entidade JPA com campos: `id`, `cardNumber` (mascarado), `cardHolder`, `expirati
 #### [NEW] `CardType.java`
 Enum: `GAS_STATION`, `STANDARD_CREDIT`, `DEBIT`.
 
+#### [NEW] `CustomerStatus.java`
+Enum: `ACTIVE`, `INACTIVE`, `SUSPENDED`, `DELETED`.
+
 #### [NEW] `CustomerRepository.java`
 Herda `JpaRepository`. Métodos:
 - `findByNameContainingIgnoreCase(String name)`
@@ -60,6 +76,25 @@ Herda `JpaRepository`. Métodos:
 Herda `JpaRepository`. Métodos:
 - `findByCardType(CardType type)`
 - `findByCustomerId(Long customerId)`
+
+### DTO Layer
+
+#### [NEW] `CustomerDTO.java`
+DTO para representação de dados de cliente.
+
+#### [NEW] `CreditCardDTO.java`
+DTO para representação de dados de cartão de crédito.
+
+#### [NEW] `CardStatsDTO.java`
+Record contendo estatísticas de cartões (total, média e soma de limites).
+
+#### [NEW] `CreditCardLimitDTO.java`
+DTO para representar informações de limite de cartão de crédito, incluindo o nome do cliente.
+
+### Mapper Layer
+
+#### [NEW] `CreditCardMapper.java`
+Classe utilitária para mapear entre a entidade `CreditCard` e o DTO `CreditCardDTO` usando ModelMapper.
 
 ---
 
@@ -93,18 +128,25 @@ Classe anotada com `@Tool` (LangChain4J). Métodos:
 - `getGasStationCreditCards()` → chama `GET /api/credit-cards/gas-station`
 - `getCustomerCards(Long customerId)` → chama `GET /api/credit-cards/customer/{customerId}`
 - `getCardStats()` → chama `GET /api/credit-cards/stats`
-- `getCustomersByLimitRange({}, {}%)` → chama `GET /api/credit-cards/by-limit-range", referenceValue, percentage);`
 
 > ️ O `DatabaseQueryTool` usa `WebClient` para chamar os endpoints REST — o LLM **nunca** recebe conexão direta ao banco.
 
 #### [NEW] `FuelCardAgent.java`
-Interface anotada com `@SystemMessage` descrevendo o papel do agente (especialista em cartões de posto de gasolina).
+Interface anotada com `@SystemMessage` descrevendo o papel do agente (especialista em cartões de posto de gasolina) em português.
 
 #### [NEW] `LangChain4JConfig.java`
-Configura `OllamaChatModel` (aponta para `http://localhost:11434`) e registra `AiServices.builder(FuelCardAgent.class)` com o `DatabaseQueryTool`.
+Configura `OllamaChatModel` (aponta para `http://localhost:11434`) e registra `AiServices.builder(FuelCardAgent.class)` com o `DatabaseQueryTool`, incluindo a configuração do `WebClient` e `ModelMapper`.
 
 #### [NEW] `AgentController.java`
 `POST /api/agent/chat` — recebe `{ "message": "..." }` e retorna a resposta do agente.
+
+### Config Layer
+
+#### [NEW] `WebConfig.java`
+Configuração Spring para habilitar CORS (Cross-Origin Resource Sharing) para endpoints `/api/**`, permitindo requisições de `http://localhost:4200`.
+
+#### [NEW] `ModelMapperConfig.java`
+Configuração Spring para fornecer um bean `ModelMapper` para facilitar o mapeamento entre DTOs e entidades.
 
 ---
 
@@ -114,98 +156,116 @@ Configura `OllamaChatModel` (aponta para `http://localhost:11434`) e registra `A
 Sobe MySQL 8 e Ollama com modelo `llama3.2`.
 
 #### [NEW] `V1__init.sql`
-Script com criação das tabelas e **10 clientes** com cartões do tipo `GAS_STATION` (dados fictícios realistas em português).
+Script com criação das tabelas e **13 clientes** com cartões do tipo `GAS_STATION` (dados fictícios realistas em português) e dados extras.
 
 ---
 
 ## Fluxo de Dados
 
 ```
-POST /api/agent/chat
-  ↓
-AgentController
-  ↓
-AgentService → FuelCardAgent (LangChain4J AiServices)
-  ↓
-Ollama LLama (raciocina sobre a pergunta)
-  ↓
-DatabaseQueryTool.@Tool (decide qual método chamar)
-  ↓
-RestTemplate → GET /api/customers/** ou /api/credit-cards/**
-  ↓
-CustomerController / CreditCardController
-  ↓
-CustomerService / CreditCardService
-  ↓
-JPA Repository → MySQL
-  ↓
-Resultado sobe a cadeia → LLM analisa e responde
+POST /api/agent/chat {"message": "..."}
+        ↓
+  AgentController → AgentService
+        ↓
+  FuelCardAgent.chat() — LangChain4J AiServices
+        ↓
+  OllamaChatModel (LLama via Ollama)
+        ↓  raciocina → decide qual @Tool chamar
+  DatabaseQueryTool.método()
+        ↓  WebClient HTTP
+  GET /api/customers/** ou /api/credit-cards/**
+        ↓
+  CustomerService / CreditCardService → JPA → MySQL
+        ↓
+  Resultado sobe → LLM analisa → responde em PT-BR
 ```
+
+> ⚠️ O LLM nunca recebe uma conexão JDBC. Ele apenas recebe strings de texto com os dados retornados pelas APIs.
 
 ---
 
-## Verification Plan
+## Como executar
 
-### 1. Subir a infraestrutura
-
+### 1. Subir infraestrutura
 ```bash
 cd fuel-card-agent
 docker-compose up -d
 ```
 
-Aguardar MySQL e Ollama subirem. Verificar com:
-```bash
-docker-compose logs -f
-```
-
-### 2. Baixar modelo LLama no Ollama
-
+### 2. Baixar o modelo LLama
 ```bash
 docker exec -it ollama ollama pull llama3.2
 ```
 
-### 3. Build e start da aplicação
-
+### 3. Iniciar a aplicação
 ```bash
 ./mvnw spring-boot:run
 ```
+> O Flyway cria automaticamente as tabelas e insere os dados ao subir.
 
-### 4. Testar APIs REST diretamente
+---
+
+## Testando as APIs de dados
 
 ```bash
-# Todos os clientes com cartão de posto
-curl http://localhost:8080/api/customers/by-card-type?type=GAS_STATION
+# Clientes com cartão de posto
+curl "http://localhost:8080/api/customers/by-card-type?type=GAS_STATION"
 
-# Buscar cliente por nome
+# Buscar por nome
 curl "http://localhost:8080/api/customers/search?name=Silva"
 
 # Cartões de posto
-curl http://localhost:8080/api/credit-cards/gas-station
+curl "http://localhost:8080/api/credit-cards/gas-station"
 
 # Estatísticas
-curl http://localhost:8080/api/credit-cards/stats
+curl "http://localhost:8080/api/credit-cards/stats"
+
+# Cartões do cliente 1
+curl "http://localhost:8080/api/credit-cards/customer/1"
 ```
 
-### 5. Testar o Agente via chat
+---
+
+## Testando o Agente
 
 ```bash
+# Listar clientes com cartão de posto
 curl -X POST http://localhost:8080/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "Quais clientes possuem cartão de posto de gasolina?"}'
 
+# Análise de limite médio
 curl -X POST http://localhost:8080/api/agent/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "Qual é o limite médio dos cartões de posto cadastrados?"}'
 
+# Dados de cliente específico
 curl -X POST http://localhost:8080/api/agent/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Me fale sobre os cartões do cliente com ID 1"}'
-  
+  -d '{"message": "Me mostre os cartões do cliente com ID 3"}'
+
+# Análise comparativa
 curl -X POST http://localhost:8080/api/agent/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Apresente os clientes com limites na faixa entre 13,6% a mais e a menos do valor 2570,00"}'
+  -d '{"message": "Quem tem o maior limite de crédito no cartão de posto?"}'
 ```
 
-### 6. Validar que o LLM não acessa o banco diretamente
+---
 
-Verificar nos logs da aplicação (`--debug` ou via Actuator) que toda chamada de dados passa pelos endpoints REST e não há chamadas JDBC originadas do contexto do agente.
+## Dados de teste (V1__init.sql)
+
+| Cliente | CPF | Cartão GAS_STATION | Limite        |
+|---------|-----|--------------------|---------------|
+| Carlos Eduardo Silva | 123.456.789-00 | **** **** **** 1001 | R$ 3.500      |
+| Ana Paula Ferreira | 234.567.890-11 | **** **** **** 2002 | R$ 2.800      |
+| Roberto Alves Mendes | 345.678.901-22 | **** **** **** 3003 | R$ 5.000      |
+| Juliana Costa Ramos | 456.789.012-33 | **** **** **** 4004 | R$ 4.200      |
+| Marcos Vinicius Oliveira | 567.890.123-44 | **** **** **** 5005 | R$ 1.500      |
+| Fernanda Lima Torres | 678.901.234-55 | **** **** **** 6006 | R$ 6.000      |
+| André Luiz Barbosa | 789.012.345-66 | **** **** **** 7007 | R$ 2.200      |
+| Patrícia Souza Nunes | 890.123.456-77 | **** **** **** 8008 | R$ 3.800      |
+| Ricardo Pereira Gomes | 901.234.567-88 | **** **** **** 9009 | R$ 4.500      |
+| Luciana Martins Cardoso | 012.345.678-99 | **** **** **** 0010 | R$ 7.000      |
+| Evandro Barroso Gaio | 456.123.979-00 | **** **** **** 1234| R$ 31.330.00  |
+| Angelita Simoes | 789.321.646-00 | **** **** **** 3456 | R$ 300.000.00 |
+| Elaine Gaio | 456.123.789-00 | **** **** **** 5678 | R$ 332.420.00 |
